@@ -25,13 +25,15 @@ def loo_andmebaas():
     connection.close()
 
 
-def muuda_toimumisaega(id,kolonn, rida):
+def muuda_toimumisaega(id, kolonn, rida):
     '''Lisab eventile aja'''
     connection = sqlite3.connect('andmed.db')
     cursor = connection.cursor()
-    cursor.execute('UPDATE tasks SET kolonn = ?, rida = ? WHERE id = ?', (rida, kolonn,id))
+    cursor.execute(
+        'UPDATE tasks SET kolonn = ?, rida = ? WHERE id = ?', (rida, kolonn, id))
     connection.commit()
     connection.close()
+
 
 def saa_task():
     '''Saab viimase taski andmebaasist'''
@@ -44,6 +46,8 @@ def saa_task():
     andmed = dict(rida)
     connection.close()
     return andmed
+
+
 def saa_taskid():
     '''Saab kõik taskid andmebaasist'''
     connection = sqlite3.connect('andmed.db')
@@ -59,21 +63,11 @@ def saa_taskid():
     return andmed
 
 
-def lisa_task(nimi,kestvus, kirjeldus, tüüp, värv, rida, kolonn):
+def lisa_task(nimi, kestvus, kirjeldus, tüüp, värv, rida, kolonn):
     '''See lisab taski andmebaasi'''
     connection = sqlite3.connect('andmed.db')
     cursor = connection.cursor()
     cursor.execute('INSERT INTO tasks (nimi,kestvus,  kirjeldus, tüüp, värv, rida, kolonn) VALUES (?,?,?,?,?, ?,?)',
-                   (nimi,kestvus, kirjeldus, tüüp, värv, rida, kolonn))
+                   (nimi, kestvus, kirjeldus, tüüp, värv, rida, kolonn))
     connection.commit()
     connection.close()
-
-
-def kustuta_task(id):
-    ''''''
-    connection = sqlite3.connect('andmed.db')
-    cursor = connection.cursor()
-    cursor.execute(
-        'DELETE FROM tasks where id = ? and nimi = ? ', (id))
-    connection.commit()
-    connection.close()  # Kui sama nime ja toimumisajaga kaks tükki kustutab mõlemad

@@ -1,12 +1,8 @@
 import sys
 from PyQt5.QtWidgets import *
-from task import loo_andmebaas, saa_taskid, muuda_toimumisaega, lisa_task
+from task import loo_andmebaas, saa_taskid, lisa_task
 from task import task_klass as task_fid
 from icalendar import Calendar
-import recurring_ical_events
-import requests
-from pathlib import Path
-import datetime
 from ical_lugemine import saa_ical, saa_rida
 # Main Window
 värvid = {'punane': "9E2B25", 'sinine': "4F759B",
@@ -16,6 +12,7 @@ värvid_index = ['9E2B25', "4F759B", "822E81", "FFB8D1"]
 
 class App(QWidget):
     '''Klassis on pea akna parameetrid'''
+
     def __init__(self):
         super().__init__()
         self.akna_nim = 'Kalender'
@@ -67,14 +64,12 @@ class App(QWidget):
         '''Loob kõik objektid mis on andmebaasis ja ical viitega'''
         oisi_omad = self.saa_andmed()
         for too in oisi_omad:
-            lisa_task(too['nimi'],too['kestvus'], too['kirjeldus'], too['tüüp'], 1,too['rida'], too['kolonn'])
+            lisa_task(too['nimi'], too['kestvus'], too['kirjeldus'],
+                      too['tüüp'], 1, too['rida'], too['kolonn'])
         koik_taskid = saa_taskid()
-        arv = len(koik_taskid)
-        if arv > 15:
-            print('Liiga palju lisatud taske')
+
         for row, task in enumerate(koik_taskid, start=1):
             if task['rida'] == 'NONE' or task['kolonn'] == 'NONE':
-                # task_data = [task['kestvus'],task['nimi'], task['kirjeldus'], task['tüüp'], task['värv'], task['toimumis_aeg']]
                 nupp = QPushButton(f'{task['kestvus']}, {task['nimi']}', self)
                 aken.setCellWidget(row, 7, nupp)
                 nupp.clicked.connect(
@@ -84,7 +79,6 @@ class App(QWidget):
                 task_fid.lisa_kalendrisse(
                     self, [int(task['kolonn']), int(task['rida'])], task, aken)
             self.viimane_rida = row
-
 
     def taski_aken(self):
         '''saadab peaakna ja viimase rea maini (viimane rida väga ei tööta)'''
@@ -102,7 +96,7 @@ class App(QWidget):
             kolonn = start_time.weekday()
 
             event_type = "Unknown"
-            
+
             categories = event.get('CATEGORIES')
             if categories:
 
@@ -111,16 +105,16 @@ class App(QWidget):
                 clean = []
                 for cat in categories:
                     try:
-                        text= cat.to_ical().decode('utf-8')
+                        text = cat.to_ical().decode('utf-8')
                         clean.append(text)
                     except:
                         clean.append(str(cat))
                 event_type = ', '.join(clean)
 
-
             info = saa_rida(event)
             description = event.get('DESCRIPTION', '')
-            koik_taskid.append({'nimi': name, 'tüüp': event_type, 'kirjeldus': description, 'rida': info[0], 'kolonn':kolonn, 'kestvus': info[1]})
+            koik_taskid.append({'nimi': name, 'tüüp': event_type, 'kirjeldus': description,
+                               'rida': info[0], 'kolonn': kolonn, 'kestvus': info[1]})
         return koik_taskid
 
 

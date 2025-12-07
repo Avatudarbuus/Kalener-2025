@@ -8,13 +8,12 @@ import datetime
 def saa_ical(self):
     '''Loob ühenduse icaliga'''
     url = "https://ois2.ut.ee/api/timetable/personal/link/9b43407acc5f4ed48ca53057ad9c39b5/et"
-    paevad = ['Monday', 'Tuesday', 'Wednesday',
-              'Thursday', 'Friday', 'Saturday', 'Sunday']
+
     try:
         response = requests.get(url)
         response.raise_for_status()
         cal = Calendar.from_ical(response.content)
-        koik_taskid = []
+
         today = datetime.date.today()
         start_of_week = today - datetime.timedelta(days=today.weekday())
         end_of_week = start_of_week + datetime.timedelta(days=6)

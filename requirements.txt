@@ -1,0 +1,8 @@
+icalendar
+recurring_ical_events
+requests
+pathlib
+datetime
+PyQt5
+
+

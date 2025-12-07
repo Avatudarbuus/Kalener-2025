@@ -11,12 +11,14 @@ värvid_index = ['9E2B25', "4F759B", "822E81", "FFB8D1"]
 
 class task_klass(QDialog):
     '''teeb klassi objekti task'''
+
     def __init__(self):
         super().__init__()
         self.widget = QWidget()
         self.setFixedHeight(600)
         self.setFixedWidth(600)
         self.määratud_kohad = []
+        self.viimane_rida = 1
 
     def aken(self, aken, viimane):
         '''teeb akna kus saab taski luua'''
@@ -58,11 +60,12 @@ class task_klass(QDialog):
         nimi = self.nimi.text()
         kirjeldus = self.kirjeldus.toPlainText()
         tüüp = self.tüüp.text()
-        lisa_task(nimi, kestvus, kirjeldus, tüüp, värv)
-        self.to_do_nupp(aken, viimane_rida)
+        lisa_task(nimi, kestvus, kirjeldus, tüüp, värv, self.viimane_rida, 'NONE')
+        self.viimane_rida += 1
+        self.to_do_nupp(aken)
         self.accept()
 
-    def to_do_nupp(self, aken, viimane_rida):
+    def to_do_nupp(self, aken):
         '''to-do tabeli osas olev nupp'''
         task = saa_task()
         nimi = task['nimi']
@@ -71,7 +74,7 @@ class task_klass(QDialog):
         värv = task['värv']
         nupp = QPushButton(f'{kestvus+1}h, {nimi}', aken)
         nupp.setStyleSheet(f'background-color: #{värvid_index[int(värv)]}')
-        aken.setCellWidget(viimane_rida+1, 7, nupp)
+        aken.setCellWidget(self.viimane_rida+1, 7, nupp)
         nupp.clicked.connect(
             lambda checked, data=task, pea_aken=aken: self.naita_andmeid(data, pea_aken))
 
@@ -106,10 +109,9 @@ class task_klass(QDialog):
         try:
             nupp.setStyleSheet(
                 f'background-color: #{värvid_index[int(task['värv'])]};')
-            pea_aken.setCellWidget(aeg[1], aeg[0], nupp)
         except KeyError:
             pass
-
+        pea_aken.setCellWidget(aeg[1], aeg[0], nupp)
         add = 0
         if task['kestvus'] != 0:
             add = 1
@@ -118,14 +120,15 @@ class task_klass(QDialog):
         nupp.clicked.connect(
             lambda checked, data=task: task_klass.naita_andmeid(self, data, pea_aken))
 
-    def tee_kohad(self, data, pea_aken): 
+    def tee_kohad(self, data, pea_aken):
         '''teeb koik kohad kuhu saab panna oma valitud taski (algus aeg)'''
         self.nupud = []
         print(self.määratud_kohad)
         for column in range(7):
             for rida in range(15):
                 olemasolev_asi = pea_aken.cellWidget(rida, column)
-                on_hõivatud = (olemasolev_asi is not None) or ([int(column), int(rida)] in self.määratud_kohad)
+                on_hõivatud = (olemasolev_asi is not None) or (
+                    [int(column), int(rida)] in self.määratud_kohad)
                 if not on_hõivatud:
                     nupp_l = QPushButton('vali see koht', self)
                     nupp_l._pos = (rida, column)
@@ -137,7 +140,7 @@ class task_klass(QDialog):
 
     def saada_asukoht(self, asukoht, task, pea_aken):
         '''saadab asukoha mis valiti'''
-        self.määratud_kohad.append(asukoht)  
+        self.määratud_kohad.append(asukoht)
         for nupp in self.nupud:
             pos = getattr(nupp, '_pos', None)
             if pos is not None:
