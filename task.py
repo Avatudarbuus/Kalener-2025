@@ -1,7 +1,13 @@
 '''Siin failis on koik taski jaoks kasutusel olevad vahendid'''
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import (  # pylint: disable=no-name-in-module
+    QDialog, QWidget, QVBoxLayout, QLabel, QButtonGroup,
+    QRadioButton, QLineEdit, QTextEdit, QPushButton
+)
 
-from andmebaas import *
+from andmebaas import (  # pylint: disable=unused-import
+    lisa_task, saa_task, muuda_toimumisaega,
+    loo_andmebaas, saa_taskid  # Exported for use in main.py
+)
 
 
 värvid = {'punane': "9E2B25", 'sinine': "4F759B",
@@ -20,7 +26,7 @@ class task_klass(QDialog):
         self.määratud_kohad = []
         self.viimane_rida = 1
 
-    def aken(self, aken, viimane):
+    def aken(self, aken):
         '''teeb akna kus saab taski luua'''
         paigutus = QVBoxLayout()
         paigutus.addWidget(QLabel("Kestus"))
@@ -47,20 +53,20 @@ class task_klass(QDialog):
         self.tüüp = QLineEdit()
         paigutus.addWidget(self.tüüp)
         self.kinnita = QPushButton('Kinnita')
-        self.kinnita.clicked.connect(lambda: self.edasta_andmed(aken, viimane))
+        self.kinnita.clicked.connect(lambda: self.edasta_andmed(aken))
 
         paigutus.addWidget(self.kinnita)
         self.setLayout(paigutus)
         self.toimumis_aeg = None
 
-    def edasta_andmed(self, aken, viimane_rida):
+    def edasta_andmed(self, aken):
         '''kinnitab nupu vajutusel ja salvestab andmed'''
         kestvus = self.aja_valik.checkedId()
         värv = self.varvid_nupud.checkedId()
         nimi = self.nimi.text()
         kirjeldus = self.kirjeldus.toPlainText()
         tüüp = self.tüüp.text()
-        lisa_task(nimi, kestvus, kirjeldus, tüüp, värv, self.viimane_rida, 'NONE')
+        lisa_task(nimi, kestvus, kirjeldus, tüüp, värv, None, None)
         self.viimane_rida += 1
         self.to_do_nupp(aken)
         self.accept()
@@ -90,7 +96,7 @@ class task_klass(QDialog):
         paigutus.addWidget(QLabel(f'Tüüp: {task['tüüp']}'))
         paigutus.addWidget(QLabel(f'Kirjeldus: {task['kirjeldus']}'))
         lisa_kalendrisse_nupp = QPushButton(
-            f'Lisa kalendrisse')
+            'Lisa kalendrisse')
         lisa_kalendrisse_nupp.setStyleSheet(
             f'background-color: #{värvid_index[int(task['värv'])]};')
         paigutus.addWidget(lisa_kalendrisse_nupp)
@@ -116,7 +122,9 @@ class task_klass(QDialog):
         if task['kestvus'] != 0:
             add = 1
         pea_aken.setSpan(aeg[1], aeg[0], add+task['kestvus'], 1)
-        muuda_toimumisaega(task['id'], int(aeg[0]), int(aeg[1]))
+        # Only update database if task has an ID (not for iCal events)
+        if task.get('id') is not None:
+            muuda_toimumisaega(task['id'], int(aeg[0]), int(aeg[1]))
         nupp.clicked.connect(
             lambda checked, data=task: task_klass.naita_andmeid(self, data, pea_aken))
 
@@ -136,13 +144,14 @@ class task_klass(QDialog):
                     pea_aken.setCellWidget(rida, column, nupp_l)
                     asukoha_info = [column, rida]
                     nupp_l.clicked.connect(
-                        lambda checked, asukoht=asukoha_info, task=data: task_klass.saada_asukoht(self, asukoht, task, pea_aken))
+                        lambda checked, asukoht=asukoha_info, task=data:
+                        task_klass.saada_asukoht(self, asukoht, task, pea_aken))
 
     def saada_asukoht(self, asukoht, task, pea_aken):
         '''saadab asukoha mis valiti'''
         self.määratud_kohad.append(asukoht)
         for nupp in self.nupud:
-            pos = getattr(nupp, '_pos', None)
+            pos = getattr(nupp, '_pos', None)  # pylint: disable=protected-access
             if pos is not None:
                 row, col = pos
                 pea_aken.setCellWidget(row, col, None)

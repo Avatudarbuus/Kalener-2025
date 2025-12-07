@@ -10,8 +10,8 @@ pylint_args=(
     --disable=R # Refactoring related checks 
   )
 
-for f in $(find . -name "*.py");
+for f in $(find . -name "*.py" -not -path "./venv/*" -not -path "./__pycache__/*");
 do
-  pylint -m pylint "${pylint_args[@]}" "$f"
+  pylint "${pylint_args[@]}" "$f"
 done
 

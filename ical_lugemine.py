@@ -1,16 +1,17 @@
+"""Module for reading and parsing iCal calendar data."""
+import datetime
+
 from icalendar import Calendar
 import recurring_ical_events
 import requests
-from pathlib import Path
-import datetime
 
 
-def saa_ical(self):
+def saa_ical():
     '''Loob ühenduse icaliga'''
     url = "https://ois2.ut.ee/api/timetable/personal/link/9b43407acc5f4ed48ca53057ad9c39b5/et"
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         cal = Calendar.from_ical(response.content)
 

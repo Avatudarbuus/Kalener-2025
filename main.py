@@ -1,8 +1,10 @@
+"""Main calendar application module."""
 import sys
-from PyQt5.QtWidgets import *
-from task import loo_andmebaas, saa_taskid, lisa_task
+from PyQt5.QtWidgets import (  # pylint: disable=no-name-in-module
+    QWidget, QVBoxLayout, QTableWidget, QPushButton, QApplication
+)
+from task import loo_andmebaas, saa_taskid
 from task import task_klass as task_fid
-from icalendar import Calendar
 from ical_lugemine import saa_ical, saa_rida
 # Main Window
 värvid = {'punane': "9E2B25", 'sinine': "4F759B",
@@ -49,8 +51,10 @@ class App(QWidget):
             aeg += 1
             indeks += 1
 
-        self.tableWidget.setHorizontalHeaderLabels(
-            ["Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev", "Reede", "Laupäev", "Pühapäev", "To-Do"])
+        self.tableWidget.setHorizontalHeaderLabels([
+            "Esmaspäev", "Teisipäev", "Kolmapäev", "Neljapäev",
+            "Reede", "Laupäev", "Pühapäev", "To-Do"
+        ])
         self.tableWidget.setVerticalHeaderLabels(ajad)
         loo_task = QPushButton("Loo tegevus", self)
         self.tableWidget.setCellWidget(0, 7, loo_task)
@@ -63,14 +67,15 @@ class App(QWidget):
     def to_do_aken(self, aken):
         '''Loob kõik objektid mis on andmebaasis ja ical viitega'''
         oisi_omad = self.saa_andmed()
-        for too in oisi_omad:
-            lisa_task(too['nimi'], too['kestvus'], too['kirjeldus'],
-                      too['tüüp'], 1, too['rida'], too['kolonn'])
         koik_taskid = saa_taskid()
 
         for row, task in enumerate(koik_taskid, start=1):
-            if task['rida'] == 'NONE' or task['kolonn'] == 'NONE':
-                nupp = QPushButton(f'{task['kestvus']}, {task['nimi']}', self)
+            if task['rida'] is None or task['kolonn'] is None:
+                nupp = QPushButton(f"{task['kestvus']+1}h, {task['nimi']}", self)
+                try:
+                    nupp.setStyleSheet(f"background-color: #{värvid_index[int(task['värv'])]}")
+                except (KeyError, IndexError, ValueError):
+                    pass  
                 aken.setCellWidget(row, 7, nupp)
                 nupp.clicked.connect(
                     lambda checked, data=task: task_fid.naita_andmeid(self, data, self.tableWidget))
@@ -79,16 +84,26 @@ class App(QWidget):
                 task_fid.lisa_kalendrisse(
                     self, [int(task['kolonn']), int(task['rida'])], task, aken)
             self.viimane_rida = row
+        
+        # Lisa ka iCal sündmused otse kalendrisse (ilma andmebaasi lisamata)
+        for too in oisi_omad:
+            self.määratud_kohad.append([too['kolonn'], too['rida']])
+            # Loo ajutine task objekt iCal sündmuse jaoks
+            temp_task = {'id': None, 'nimi': too['nimi'], 'kestvus': too['kestvus'], 
+                        'kirjeldus': too['kirjeldus'], 'tüüp': too['tüüp'], 
+                        'värv': 1, 'rida': too['rida'], 'kolonn': too['kolonn']}
+            task_fid.lisa_kalendrisse(
+                self, [int(too['kolonn']), int(too['rida'])], temp_task, aken)
 
     def taski_aken(self):
         '''saadab peaakna ja viimase rea maini (viimane rida väga ei tööta)'''
         dlg = task_fid()
-        andmed = dlg.aken(self.tableWidget, self.viimane_rida)
+        dlg.aken(self.tableWidget)
         dlg.exec_()
 
     def saa_andmed(self):
         '''saab info õisist'''
-        events = saa_ical(self)
+        events = saa_ical()
         koik_taskid = []
         for event in events:
             name = event.get('SUMMARY')
@@ -107,14 +122,16 @@ class App(QWidget):
                     try:
                         text = cat.to_ical().decode('utf-8')
                         clean.append(text)
-                    except:
+                    except (AttributeError, UnicodeDecodeError):
                         clean.append(str(cat))
                 event_type = ', '.join(clean)
 
             info = saa_rida(event)
             description = event.get('DESCRIPTION', '')
-            koik_taskid.append({'nimi': name, 'tüüp': event_type, 'kirjeldus': description,
-                               'rida': info[0], 'kolonn': kolonn, 'kestvus': info[1]})
+            koik_taskid.append({'nimi': name, 'tüüp': event_type,
+                                'kirjeldus': description,
+                                'rida': info[0], 'kolonn': kolonn,
+                                'kestvus': info[1]})
         return koik_taskid
 
 
