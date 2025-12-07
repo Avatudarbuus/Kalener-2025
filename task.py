@@ -1,3 +1,4 @@
+'''Siin failis on koik taski jaoks kasutusel olevad vahendid'''
 from PyQt5.QtWidgets import *
 
 from andmebaas import *
@@ -9,6 +10,7 @@ värvid_index = ['9E2B25', "4F759B", "822E81", "FFB8D1"]
 
 
 class task_klass(QDialog):
+    '''teeb klassi objekti task'''
     def __init__(self):
         super().__init__()
         self.widget = QWidget()
@@ -17,7 +19,7 @@ class task_klass(QDialog):
         self.määratud_kohad = []
 
     def aken(self, aken, viimane):
-
+        '''teeb akna kus saab taski luua'''
         paigutus = QVBoxLayout()
         paigutus.addWidget(QLabel("Kestus"))
         self.setGeometry(10, 10, 500, 500)
@@ -50,18 +52,18 @@ class task_klass(QDialog):
         self.toimumis_aeg = None
 
     def edasta_andmed(self, aken, viimane_rida):
-
+        '''kinnitab nupu vajutusel ja salvestab andmed'''
         kestvus = self.aja_valik.checkedId()
         värv = self.varvid_nupud.checkedId()
         nimi = self.nimi.text()
         kirjeldus = self.kirjeldus.toPlainText()
         tüüp = self.tüüp.text()
-        toimumis_aeg = None
         lisa_task(nimi, kestvus, kirjeldus, tüüp, värv)
         self.to_do_nupp(aken, viimane_rida)
         self.accept()
 
     def to_do_nupp(self, aken, viimane_rida):
+        '''to-do tabeli osas olev nupp'''
         task = saa_task()
         nimi = task['nimi']
         kestvus = task['kestvus']
@@ -74,6 +76,7 @@ class task_klass(QDialog):
             lambda checked, data=task, pea_aken=aken: self.naita_andmeid(data, pea_aken))
 
     def naita_andmeid(self, task, pea_aken):
+        '''teeb akna mis naitab andmeid'''
         self.kast = QWidget()
         self.kast.setWindowTitle(f'{task['nimi']}')
         self.kast.setStyleSheet(
@@ -97,13 +100,16 @@ class task_klass(QDialog):
         self.kast.setLayout(paigutus)
         self.kast.show()
 
-    # aeg ? [column, row] #SIIN ON VAJA MAIN AKENT
     def lisa_kalendrisse(self, aeg, task, pea_aken):
-
+        '''lisab taski kalendrisse nupuna'''
         nupp = QPushButton(f'{task['kestvus']+1}h, {task['nimi']}', self)
-        nupp.setStyleSheet(
-            f'background-color: #{värvid_index[int(task['värv'])]};')
-        pea_aken.setCellWidget(aeg[1], aeg[0], nupp)
+        try:
+            nupp.setStyleSheet(
+                f'background-color: #{värvid_index[int(task['värv'])]};')
+            pea_aken.setCellWidget(aeg[1], aeg[0], nupp)
+        except KeyError:
+            pass
+
         add = 0
         if task['kestvus'] != 0:
             add = 1
@@ -112,7 +118,8 @@ class task_klass(QDialog):
         nupp.clicked.connect(
             lambda checked, data=task: task_klass.naita_andmeid(self, data, pea_aken))
 
-    def tee_kohad(self, data, pea_aken):  # SIIN ON KA VAJA MAIN AKENT
+    def tee_kohad(self, data, pea_aken): 
+        '''teeb koik kohad kuhu saab panna oma valitud taski (algus aeg)'''
         self.nupud = []
         print(self.määratud_kohad)
         for column in range(7):
@@ -120,7 +127,7 @@ class task_klass(QDialog):
                 olemasolev_asi = pea_aken.cellWidget(rida, column)
                 on_hõivatud = (olemasolev_asi is not None) or ([int(column), int(rida)] in self.määratud_kohad)
                 if not on_hõivatud:
-                    nupp_l = QPushButton('nupp', self)
+                    nupp_l = QPushButton('vali see koht', self)
                     nupp_l._pos = (rida, column)
                     self.nupud.append(nupp_l)
                     pea_aken.setCellWidget(rida, column, nupp_l)
@@ -129,6 +136,7 @@ class task_klass(QDialog):
                         lambda checked, asukoht=asukoha_info, task=data: task_klass.saada_asukoht(self, asukoht, task, pea_aken))
 
     def saada_asukoht(self, asukoht, task, pea_aken):
+        '''saadab asukoha mis valiti'''
         self.määratud_kohad.append(asukoht)  
         for nupp in self.nupud:
             pos = getattr(nupp, '_pos', None)
@@ -138,5 +146,5 @@ class task_klass(QDialog):
             nupp.setParent(None)
             nupp.deleteLater()
         self.nupud.clear()
-        # SIIN ON vAJA MAIN AKENT
+
         task_klass.lisa_kalendrisse(self, asukoht, task, pea_aken)

@@ -2,6 +2,7 @@ import sqlite3
 
 
 def loo_andmebaas():
+    '''Loob andmebaasi kui seda ei ole'''
     connection = sqlite3.connect('andmed.db')
     cursor = connection.cursor()  # aitab andmebaasist asju võtta
 
@@ -24,7 +25,8 @@ def loo_andmebaas():
     connection.close()
 
 
-def muuda_toimumisaega(id,kolonn, rida): #Toimumisaeg on [column,row] e rohkem nagu asukoht tabelis
+def muuda_toimumisaega(id,kolonn, rida):
+    '''Lisab eventile aja'''
     connection = sqlite3.connect('andmed.db')
     cursor = connection.cursor()
     cursor.execute('UPDATE tasks SET kolonn = ?, rida = ? WHERE id = ?', (rida, kolonn,id))
@@ -32,6 +34,7 @@ def muuda_toimumisaega(id,kolonn, rida): #Toimumisaeg on [column,row] e rohkem n
     connection.close()
 
 def saa_task():
+    '''Saab viimase taski andmebaasist'''
     connection = sqlite3.connect('andmed.db')
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
@@ -42,6 +45,7 @@ def saa_task():
     connection.close()
     return andmed
 def saa_taskid():
+    '''Saab kõik taskid andmebaasist'''
     connection = sqlite3.connect('andmed.db')
     cursor = connection.cursor()
     cursor.execute("SELECT * FROM tasks")  # võtab kõik andmed.db-st
@@ -55,28 +59,21 @@ def saa_taskid():
     return andmed
 
 
-def lisa_task(nimi,kestvus, kirjeldus, tüüp, värv):
+def lisa_task(nimi,kestvus, kirjeldus, tüüp, värv, rida, kolonn):
+    '''See lisab taski andmebaasi'''
     connection = sqlite3.connect('andmed.db')
     cursor = connection.cursor()
-    cursor.execute('INSERT INTO tasks (nimi,kestvus,  kirjeldus, tüüp, värv) VALUES (?,?,?,?,?)',
-                   (nimi,kestvus, kirjeldus, tüüp, värv))
+    cursor.execute('INSERT INTO tasks (nimi,kestvus,  kirjeldus, tüüp, värv, rida, kolonn) VALUES (?,?,?,?,?, ?,?)',
+                   (nimi,kestvus, kirjeldus, tüüp, värv, rida, kolonn))
     connection.commit()
     connection.close()
 
 
 def kustuta_task(id):
+    ''''''
     connection = sqlite3.connect('andmed.db')
     cursor = connection.cursor()
     cursor.execute(
         'DELETE FROM tasks where id = ? and nimi = ? ', (id))
     connection.commit()
     connection.close()  # Kui sama nime ja toimumisajaga kaks tükki kustutab mõlemad
-
-
-def muuda_taski(kestvus, nimi, kirjeldus, tüüp, värv):
-    connection = sqlite3.connect('andmed.db')
-
-    cursor = connection.cursor()
-    # tuleb jälgida mida muudetakse, täiesti puufulik kood
-    connection.commit()
-    connection.close()
