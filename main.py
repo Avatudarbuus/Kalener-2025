@@ -1,6 +1,7 @@
 import sys
 from PyQt5.QtWidgets import *
-from task import task, loo_andmebaas, saa_taskid, muuda_toimumisaega
+from task import loo_andmebaas, saa_taskid, muuda_toimumisaega
+from task import task_klass as task_fid
 import icalendar
 
 # Main Window
@@ -71,88 +72,48 @@ class App(QWidget):
                 nupp = QPushButton(f'{task['kestvus']}, {task['nimi']}', self)
                 aken.setCellWidget(row, 7, nupp)
                 nupp.clicked.connect(
-                    lambda checked, data=task: self.naita_andmeid(data))
+                    lambda checked, data=task: task_fid.naita_andmeid(self, data, self.tableWidget))
             else:
                 self.määratud_kohad.append([task['kolonn'],task['rida']])
-                self.lisa_kalendrisse([int(task['kolonn']),int(task['rida'])],task)
+                task_fid.lisa_kalendrisse(self,[int(task['kolonn']),int(task['rida'])],task, aken)
             self.viimane_rida = row
 
-    def naita_andmeid(self, task):
-        global paigutus
-        print(f'Naitan andmeid kohas: {task}')
-        self.naitan_andmeid = QWidget()
-        self.naitan_andmeid.setFixedWidth(400)
-        self.naitan_andmeid.setFixedHeight(500)
-        self.naitan_andmeid.setWindowTitle(f'{'nimi'}')
-        self.naitan_andmeid.setStyleSheet(
-            f'background-color: #{värvid_index[int(task['värv'])]};')
-        paigutus = QVBoxLayout()
-        paigutus.addWidget(QLabel(f'Nimi: {task['nimi']}'))
-        paigutus.addWidget(QLabel(f'Kestvus: {int(task['kestvus']) +1}'))
-        paigutus.addWidget(QLabel(f'Tüüp: {task['tüüp']}'))
-        paigutus.addWidget(QLabel(f'Kirjeldus: {task['kirjeldus']}'))
-        #paigutus.addWidget(QLabel(f'Toimumis aeg: {task['toimumis_aeg']}'))
-        lisa_kalendrisse_nupp = QPushButton(
-            f'Lisa kalendrisse')
-        lisa_kalendrisse_nupp.setStyleSheet(
-            f'background-color: #{värvid_index[int(task['värv'])]};')
-        paigutus.addWidget(lisa_kalendrisse_nupp)
+    ''' def naita_andmeid(self, task):
+            global paigutus
+            print(f'Naitan andmeid kohas: {task}')
+            self.naitan_andmeid = QWidget()
+            self.naitan_andmeid.setFixedWidth(400)
+            self.naitan_andmeid.setFixedHeight(500)
+            self.naitan_andmeid.setWindowTitle(f'{'nimi'}')
+            self.naitan_andmeid.setStyleSheet(
+                f'background-color: #{värvid_index[int(task['värv'])]};')
+            paigutus = QVBoxLayout()
+            paigutus.addWidget(QLabel(f'Nimi: {task['nimi']}'))
+            paigutus.addWidget(QLabel(f'Kestvus: {int(task['kestvus']) +1}'))
+            paigutus.addWidget(QLabel(f'Tüüp: {task['tüüp']}'))
+            paigutus.addWidget(QLabel(f'Kirjeldus: {task['kirjeldus']}'))
+            #paigutus.addWidget(QLabel(f'Toimumis aeg: {task['toimumis_aeg']}'))
+            lisa_kalendrisse_nupp = QPushButton(
+                f'Lisa kalendrisse')
+            lisa_kalendrisse_nupp.setStyleSheet(
+                f'background-color: #{värvid_index[int(task['värv'])]};')
+            paigutus.addWidget(lisa_kalendrisse_nupp)
 
-        lisa_kalendrisse_nupp.clicked.connect(
-            lambda checked, data=task: self.tee_kohad(data)
-        )
-        self.naitan_andmeid.setLayout(paigutus)
-        self.naitan_andmeid.show()
+            lisa_kalendrisse_nupp.clicked.connect(
+                lambda checked, data=task: self.tee_kohad(data)
+            )
+            self.naitan_andmeid.setLayout(paigutus)
+            self.naitan_andmeid.show()'''
 
 
 
     def taski_aken(self):
-        dlg = task()
+        dlg = task_fid()
         andmed = dlg.aken(self.tableWidget, self.viimane_rida)
         dlg.exec_()
-
-    def lisa_kalendrisse(self, aeg, task):  # aeg ? [column, row]
-
-        nupp = QPushButton(f'{task['kestvus']+1}h, {task['nimi']}', self)
-        nupp.setStyleSheet(
-            f'background-color: #{värvid_index[int(task['värv'])]};')
-        self.tableWidget.setCellWidget(aeg[1], aeg[0], nupp)
-        add = 0
-        if task['kestvus'] != 0:
-            add = 1
-        self.tableWidget.setSpan(aeg[1], aeg[0], add+task['kestvus'],1)
-        muuda_toimumisaega(task['id'], int(aeg[0]), int(aeg[1]))
-        nupp.clicked.connect(
-            lambda checked, data=task: self.naita_andmeid(data))
         
 
-    def tee_kohad(self,data):
-        self.nupud = []
-        print(self.määratud_kohad)
-        for column in range(7):
-            for rida in range(15):
-                if [column, rida] not in self.määratud_kohad:
-                    nupp_l = QPushButton('nupp', self)
-                    nupp_l._pos = (rida,column)
-                    self.nupud.append(nupp_l)
-                    self.tableWidget.setCellWidget(rida,column, nupp_l)
-                    asukoha_info = [column, rida]
-                    nupp_l.clicked.connect(
-                        lambda checked, asukoht=asukoha_info, task = data: self.saada_asukoht(asukoht, task))
-
-
-
-    def saada_asukoht(self,asukoht, task):
-        self.määratud_kohad.append(asukoht) #ehk aeg
-        for nupp in self.nupud:
-            pos = getattr(nupp, '_pos', None)
-            if pos is not None:
-                row, col = pos
-                self.tableWidget.setCellWidget(row, col, None)
-            nupp.setParent(None)
-            nupp.deleteLater()
-        self.nupud.clear()
-        self.lisa_kalendrisse(asukoht, task)
+#SIIN ON vAJA MAIN AKENT
         
 if __name__ == '__main__':
     loo_andmebaas()
